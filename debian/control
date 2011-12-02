@@ -2,7 +2,7 @@ Source: isibackup
 Section: utils
 Priority: optional
 Maintainer: Adrian Friedli <adrian.friedli@logintas.ch>
-Build-Depends: debhelper (>= 5), docbook, docbook-utils, help2man, libisi-ruby
+Build-Depends: debhelper (>= 5), docbook, docbook-utils, help2man, libisi-ruby, docbook2x
 Standards-Version: 3.7.2
 
 Package: isibackup
