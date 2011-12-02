@@ -323,7 +323,11 @@ end
 
 def interrupt_program 
   $log.error{"------- Aborted backup by user interrupt."}
-  setNewStamp("aborted_by_user")
+  begin
+    setNewStamp("aborted_by_user")
+  rescue
+    $log.error{"Could not write stamp: #{$!}"}
+  end
   $log.debug("Exiting")
   exit 1
 end
@@ -387,7 +391,12 @@ def setOldStamp
     end
   end
 
-  lStampFileOld.open("w") {|f| f.write(Backup.get_config("START_TIME"))}
+  lStampFileOld.open("w") { |f|
+    f.write(Backup.get_config("START_TIME"))
+
+    # work-around: explicit close; ruby 1.8 seems not to do it cleanly although using blocks; might be a bug in ruby?
+    f.close
+  }
 
   change_perms(lStampFileOld.to_s)
 end
@@ -441,6 +450,9 @@ def setNewStamp(result)
   open(new_file,"a") {|f|
     f.write fields.join(",")
     f.write "\n"
+
+    # work-around: explicit close; ruby 1.8 seems not to do it cleanly although using blocks; might be a bug in ruby?
+    f.close
   }
   
   FileUtils.mv(new_file, Backup.get_config("lStampFileNew"))
@@ -967,6 +979,9 @@ def sum_and_clean_file_list(file_list)
 	  $log.debug{"TotalSize: '#{lTotalSize}' FileCount: '#{lFileCount}' DirCount: '#{lDirCount}'."}
 	end
       }
+
+      # work-around: explicit close; ruby 1.8 seems not to do it cleanly although using blocks; might be a bug in ruby?
+      fl.close
     }
   rescue
     FileUtils.rm_f(file_list_copy.to_s)
@@ -1456,8 +1471,16 @@ f.write(recordSetting("LOG_FILE", "# The log file original location. A copy will
     f.write(recordSetting("lCryptKeyId", "# The public key actually used to encrypt the backup. It is recorded in $lSettingsFile.cryptkey.asc"))
     f.write(recordSetting("lSourceDir","# The source directory actually used for this backup"))
     f.write(recordSetting("lTargetDir","# The target directory actually used for this backup"))
+
+    # work-around: explicit close; ruby 1.8 seems not to do it cleanly although using blocks; might be a bug in ruby?
+    f.close
   }
-  open("#{Backup.get_config("lSettingsFile")}.cryptkey.asc","w") {|f| f.write Backup.get_config("lCryptKeyContent")}
+  open("#{Backup.get_config("lSettingsFile")}.cryptkey.asc","w") {|f|
+    f.write Backup.get_config("lCryptKeyContent")
+
+    # work-around: explicit close; ruby 1.8 seems not to do it cleanly although using blocks; might be a bug in ruby?
+    f.close
+  }
 end
 
 def makedir_perms(path)
@@ -1546,6 +1569,9 @@ end
 def recordStartTime 
   open(Backup.get_config("lSettingsFile"),"a") {|f|
     f.write(recordSetting("StartTime", "# Time when backup run was started (format: year-month-day-hour-minute-second). There needs to be a \"FinishTime\", otherwise the backup was not finished", Backup.get_config("START_TIME")))
+
+    # work-around: explicit close; ruby 1.8 seems not to do it cleanly although using blocks; might be a bug in ruby?
+    f.close
   }
 end
   
@@ -1560,6 +1586,9 @@ def recordFinishTime
 #    f.write(recordSetting("lTotalSizeReduction","# Total reduction in size (%)"))
 
     f.write(recordSetting("FinishTime","# Time when backup was finished (format: year-month-day-hour-minute-second). ",Backup.get_config("FINISH_TIME")))
+
+    # work-around: explicit close; ruby 1.8 seems not to do it cleanly although using blocks; might be a bug in ruby?
+    f.close
   }
   ##TODO##     if [ -s "$LOG_FILE" ] ; then
   ##TODO##         change_perms "$LOG_FILE"
@@ -1657,6 +1686,9 @@ def save_statistics(file)
     get_statistics.each {|line|
       f.write(line)
     }
+
+    # work-around: explicit close; ruby 1.8 seems not to do it cleanly although using blocks; might be a bug in ruby?
+    f.close
   }
 end
 
@@ -1684,11 +1716,36 @@ def save_settings
   if Backup.get_config("OPT_SET")
     FileUtils.copy(Backup.get_config("SET_CONFIG"), target_file("isibackup/set.conf"))
    
-    open(target_file("isibackup/include_dirs.lst"),"w") {|f| f.write(Backup.get_config("OPT_INCLUDE_DIRS")) }
-    open(target_file("isibackup/exclude_dirs.lst"),"w") {|f| f.write(Backup.get_config("OPT_EXCLUDE_DIRS")) }
-    open(target_file("isibackup/include_files.lst"),"w") {|f| f.write(Backup.get_config("OPT_INCLUDE_FILES")) }
-    open(target_file("isibackup/exclude_files.lst"),"w") {|f| f.write(Backup.get_config("OPT_EXCLUDE_FILES")) }
-    open(target_file("isibackup/separate_dirs.lst"),"w") {|f| f.write(Backup.get_config("OPT_SEPARATE_DIRS")) }
+    open(target_file("isibackup/include_dirs.lst"),"w") {|f|
+      f.write(Backup.get_config("OPT_INCLUDE_DIRS"))
+
+      # work-around: explicit close; ruby 1.8 seems not to do it cleanly although using blocks; might be a bug in ruby?
+      f.close
+    }
+    open(target_file("isibackup/exclude_dirs.lst"),"w") {|f|
+      f.write(Backup.get_config("OPT_EXCLUDE_DIRS"))
+
+      # work-around: explicit close; ruby 1.8 seems not to do it cleanly although using blocks; might be a bug in ruby?
+      f.close
+    }
+    open(target_file("isibackup/include_files.lst"),"w") {|f|
+      f.write(Backup.get_config("OPT_INCLUDE_FILES"))
+
+      # work-around: explicit close; ruby 1.8 seems not to do it cleanly although using blocks; might be a bug in ruby?
+      f.close
+    }
+    open(target_file("isibackup/exclude_files.lst"),"w") {|f|
+      f.write(Backup.get_config("OPT_EXCLUDE_FILES"))
+
+      # work-around: explicit close; ruby 1.8 seems not to do it cleanly although using blocks; might be a bug in ruby?
+      f.close
+    }
+    open(target_file("isibackup/separate_dirs.lst"),"w") {|f|
+      f.write(Backup.get_config("OPT_SEPARATE_DIRS"))
+
+      # work-around: explicit close; ruby 1.8 seems not to do it cleanly although using blocks; might be a bug in ruby?
+      f.close
+    }
   end
 end
 
@@ -2094,7 +2151,11 @@ begin
   Backup.set_config("START_TIME", DateTime.now.strftime("%F %T"))
   $log.info { "started at: #{Backup.get_config("START_TIME")}"}
   
-  setNewStamp("started")
+  begin
+    setNewStamp("started")
+  rescue
+    $log.error{"Could not write stamp: #{$!}"}
+  end
   
   case $action
   when :backup
@@ -2231,6 +2292,9 @@ begin
 		  rescue Errno::ENOENT
 		    raise $! if entry.exist?
 		    next
+                 rescue Errno::EACCES
+                    # silently ignore access errors (might occur as user root for special dirs like $HOME/.gvfs)
+                    next
 		  end      
 		}
 		$log.debug("Entry '#{newer_file}'s ctime '#{newer_file.lstat.ctime}' in '#{current.pathname}' is after reference time '#{reference_time}'") if newer_file
@@ -2593,8 +2657,18 @@ begin
     recordFinishTime
     
     # write timestamps to detect last success
-    open("#{Backup.get_config("lTargetDir")}/isibackup/finished.date","w") {|f| f.write(finish_time.strftime("%F"))}
-    open("#{Backup.get_config("lTargetDir")}/isibackup/finished.datetime","w") {|f| f.write(finish_time.strftime("%F %T"))}
+    open("#{Backup.get_config("lTargetDir")}/isibackup/finished.date","w") {|f|
+      f.write(finish_time.strftime("%F"))
+
+      # work-around: explicit close; ruby 1.8 seems not to do it cleanly although using blocks; might be a bug in ruby?
+      f.close
+    }
+    open("#{Backup.get_config("lTargetDir")}/isibackup/finished.datetime","w") {|f|
+      f.write(finish_time.strftime("%F %T"))
+
+      # work-around: explicit close; ruby 1.8 seems not to do it cleanly although using blocks; might be a bug in ruby?
+      f.close
+    }
 
     release_lock
 
@@ -2665,15 +2739,27 @@ begin
   $log.info { "finished at: #{Backup.get_config("FINISH_TIME")}"}
   
   if $action == :collect or $action == :copy
-    setNewStamp("completed")
+    begin
+      setNewStamp("completed")
+    rescue
+      $log.error{"Could not write stamp: #{$!}"}
+    end
   else
     error_log = Pathname.new(logfile("error.log"))
     $log.debug{"Error log exist: #{error_log.exist?}"}
     $log.debug{"Error log size: #{error_log.size}"}
     if !error_log.exist? or error_log.size != 0 or $error_ocurred
-      setNewStamp("completed_with_errors")
+      begin
+        setNewStamp("completed_with_errors")
+      rescue
+        $log.error{"Could not write stamp: #{$!}"}
+      end
     else
-      setNewStamp("completed")
+      begin
+        setNewStamp("completed")
+      rescue
+        $log.error{"Could not write stamp: #{$!}"}
+      end
     end
   end
     
@@ -2685,7 +2771,13 @@ rescue
   $!.backtrace.each {|line|
     $log.info line
   }
-  setNewStamp("aborted_by_exception") if Backup.get_config("PATH_STATE")
+  if Backup.get_config("PATH_STATE")
+    begin
+      setNewStamp("aborted_by_exception")
+    rescue
+      $log.error{"Could not write stamp: #{$!}"}
+    end
+  end
   exit 1
 ensure
   cleanup_program
