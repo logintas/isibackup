@@ -77,8 +77,8 @@ binary-indep: build install
 	dh_fixperms
 	dh_installdeb
 	dh_gencontrol
+	find $(CURDIR)/debian/isibackup/usr/bin -type f -exec sed -i "s/##DEVELOPMENT##/`grep Version $(CURDIR)/debian/isibackup/DEBIAN/control | sed 's/Version: //'`/" {} \;
 	dh_md5sums
-	find $(CURDIR)/debian/isibackup/usr/bin -exec sed -i "s/##DEVELOPMENT##/`grep Version $(CURDIR)/debian/isibackup/DEBIAN/control | sed 's/Version: //'`/" {} \;
 	dh_builddeb
 
 # Build architecture-dependent files here.
